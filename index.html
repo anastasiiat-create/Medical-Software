@@ -160,12 +160,26 @@
       border: 1px solid var(--stroke);
       box-shadow: 0 10px 25px rgba(0,0,0,0.08);
       transform: translate(-50%, -50%);
-      transition: left 1.2s cubic-bezier(0.4, 0, 0.2, 1),
-                  top 1.2s cubic-bezier(0.4, 0, 0.2, 1),
-                  transform 1.2s cubic-bezier(0.4, 0, 0.2, 1),
-                  border 0.5s ease, box-shadow 0.5s ease, opacity 0.4s ease;
       z-index: 10;
-      will-change: left, top, transform;
+
+      /* Smooth movement + smooth resize */
+      --moveDur: 1.2s;
+      --moveEase: cubic-bezier(0.4, 0, 0.2, 1);
+      transition:
+        left var(--moveDur) var(--moveEase),
+        top var(--moveDur) var(--moveEase),
+        width var(--moveDur) var(--moveEase),
+        height var(--moveDur) var(--moveEase),
+        font-size var(--moveDur) var(--moveEase),
+        border 0.75s ease,
+        box-shadow 0.75s ease,
+        opacity 0.4s ease;
+      will-change: left, top, width, height, font-size, transform;
+    }
+
+    .bubble.center-move{
+      --moveDur: 1.9s;
+      --moveEase: cubic-bezier(0.22, 0.61, 0.36, 1);
     }
 
     .bubble.replace { animation: pulseIcon 0.4s ease; }
@@ -178,14 +192,17 @@
     /* Result style */
     .bubble.result-active {
       border: 4px solid var(--hot);
-      box-shadow: 0 0 20px rgba(255, 45, 45, 0.3);
+      box-shadow: 0 0 22px rgba(255, 45, 45, 0.32);
       z-index: 100;
     }
 
+    /* Fingerprint button */
     .fingerBtn{
       width: 220px;
       height: 260px;
-      background: white;
+      background:
+        radial-gradient(circle at 30% 18%, rgba(34,195,255,.22), rgba(255,255,255,1) 55%),
+        linear-gradient(180deg, rgba(255,255,255,1), rgba(245,252,255,1));
       border-radius: 110px;
       border: 1px solid var(--stroke);
       box-shadow: var(--shadow);
@@ -195,17 +212,30 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
       touch-action: none;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
     }
+
+    /* inner “fingerprint ridge” plate */
     .fingerBtn::before{
       content:"";
       position:absolute;
-      inset: 10px;
+      inset: 12px;
       border-radius: 100px;
-      border: 4px solid #f0f0f0;
+      border: 4px solid rgba(10,30,60,.06);
+      background:
+        radial-gradient(circle at 50% 45%, rgba(34,195,255,.16), rgba(255,255,255,0) 55%),
+        repeating-radial-gradient(circle at 50% 55%,
+          rgba(34,195,255,.16) 0 1px,
+          rgba(255,255,255,0) 1px 8px);
+      opacity: .95;
+      z-index: 0;
+      pointer-events:none;
     }
+
+    /* progress ring */
     .fingerBtn::after{
       content:"";
       position:absolute;
@@ -213,24 +243,35 @@
       border-radius: 100px;
       border: 4px solid var(--blue);
       clip-path: inset(calc((1 - var(--p)) * 100%) 0 0 0);
+      z-index: 3;
+      pointer-events:none;
     }
 
-    .fingerSvg{ width: 80px; opacity: 0.6; }
+    .fingerSvg{
+      width: 96px;
+      color: rgba(34,195,255,.95);
+      opacity: 1;
+      position: relative;
+      z-index: 2;
+      filter: drop-shadow(0 10px 18px rgba(34,195,255,.18));
+    }
+
     .scanLine {
       position: absolute;
-      width: 80%;
+      width: 78%;
       height: 4px;
       background: var(--blue);
-      box-shadow: 0 0 15px var(--blue);
+      box-shadow: 0 0 16px rgba(34,195,255,.9);
       border-radius: 2px;
       display: none;
       top: 20%;
+      z-index: 4;
     }
-    .scanning .scanLine { display: block; animation: scanAnim 1.5s infinite linear; }
+    .scanning .scanLine { display: block; animation: scanAnim 1.55s infinite linear; }
     @keyframes scanAnim {
-      0% { top: 20%; opacity: 0; }
+      0% { top: 22%; opacity: 0; }
       50% { opacity: 1; }
-      100% { top: 80%; opacity: 0; }
+      100% { top: 78%; opacity: 0; }
     }
 
     /* Mobile adaptation */
@@ -279,7 +320,7 @@
       }
 
       .fingerSvg{
-        width: clamp(64px, 18vw, 80px);
+        width: clamp(84px, 22vw, 96px);
       }
     }
   </style>
@@ -299,8 +340,15 @@
 
       <div class="fingerBtn" id="fingerBtn">
         <div class="scanLine"></div>
-        <svg class="fingerSvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M12 11c0-3.314-2.686-6-6-6S0 7.686 0 11v4c0 3.314 2.686 6 6 6s6-2.686 6-6v-4zM18 11c0-3.314-2.686-6-6-6M24 11c0-3.314-2.686-6-6-6" />
+
+        <!-- Clearer fingerprint icon -->
+        <svg class="fingerSvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 11.6c1.25 0 2.2 1.0 2.2 2.25 0 2.9-.95 5.75-2.1 7.45" />
+          <path d="M8.8 11.9c0-2.35 1.75-4.4 4.1-4.4 2.65 0 4.8 2.05 4.8 5.15 0 4.55-1.55 7.5-2.75 8.9" />
+          <path d="M6.9 12.2C6.9 8.9 9.35 5.4 12.4 5.4c3.95 0 6.7 2.55 6.7 7.2 0 3.25-.55 6.05-1.85 8.35" />
+          <path d="M4.9 12.5c0-4.85 3.75-9.35 7.9-9.35 5.3 0 8.9 3.35 8.9 9.2" />
+          <path d="M10.2 19.25c-.9-1.35-1.55-3.35-1.55-5.95" />
+          <path d="M7.4 18.0c-1.2-1.75-2.0-3.95-2.0-6.2" />
         </svg>
       </div>
     </div>
@@ -315,7 +363,7 @@
   let bubbles = [];
   let scanning = false;
 
-  // Setup Age scroller (swipe left/right; the centered number gets highlighted)
+  // Setup Age scroller (swipe left/right; centered number gets highlighted)
   const AGE_MIN = 15;
   const AGE_MAX = 25;
   const DEFAULT_AGE = 20;
@@ -425,6 +473,7 @@
 
   function showResults() {
     scanning = false;
+    fingerBtn.classList.remove('scanning');
     fingerBtn.style.opacity = '0';
     panel.classList.add('hide');
 
@@ -433,40 +482,53 @@
     const rejected = bubbles[4];
     if(rejected) rejected.style.opacity = '0';
 
-    // 1) Highlight in place first
-    chosen.forEach(b => b.classList.add('result-active'));
-
-    // 2) Delay before moving to center
+    // PAUSE 1: keep them on their places (no red yet)
     setTimeout(() => {
-      const centerX = window.innerWidth / 2;
-      const centerY = window.innerHeight / 2 + 40;
+      // Step 1: slowly outline red
+      chosen.forEach(b => b.classList.add('result-active'));
 
-      const finalSize = Math.min(window.innerWidth * 0.35, 140);
-      const gap = 20;
+      // PAUSE 2: let the red outline be seen clearly
+      setTimeout(() => {
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2 + 40;
 
-      const offsets = [
-        { dx: -(finalSize/2 + gap/2), dy: -(finalSize/2 + gap/2) }, // top-left
-        { dx: (finalSize/2 + gap/2),  dy: -(finalSize/2 + gap/2) }, // top-right
-        { dx: -(finalSize/2 + gap/2), dy: (finalSize/2 + gap/2)  }, // bottom-left
-        { dx: (finalSize/2 + gap/2),  dy: (finalSize/2 + gap/2)  }  // bottom-right
-      ];
+        const finalSize = Math.min(window.innerWidth * 0.35, 140);
+        const gap = 20;
 
-      chosen.forEach((b, i) => {
-        const rect = b.getBoundingClientRect();
-        b.style.left = (rect.left + rect.width/2) + 'px';
-        b.style.top  = (rect.top  + rect.height/2) + 'px';
-        b.style.position = 'fixed';
-        b.style.margin = '0';
+        const offsets = [
+          { dx: -(finalSize/2 + gap/2), dy: -(finalSize/2 + gap/2) }, // top-left
+          { dx: (finalSize/2 + gap/2),  dy: -(finalSize/2 + gap/2) }, // top-right
+          { dx: -(finalSize/2 + gap/2), dy: (finalSize/2 + gap/2)  }, // bottom-left
+          { dx: (finalSize/2 + gap/2),  dy: (finalSize/2 + gap/2)  }  // bottom-right
+        ];
 
-        setTimeout(() => {
-          b.style.left = (centerX + offsets[i].dx) + 'px';
-          b.style.top  = (centerY + offsets[i].dy) + 'px';
-          b.style.width = finalSize + 'px';
-          b.style.height = finalSize + 'px';
-          b.style.fontSize = (finalSize * 0.6) + 'px';
-        }, 10);
-      });
-    }, 800);
+        // Step 2: slowly grow + move to center grid
+        chosen.forEach((b, i) => {
+          const rect = b.getBoundingClientRect();
+
+          // Convert to fixed without visual jump
+          b.style.left = (rect.left + rect.width/2) + 'px';
+          b.style.top  = (rect.top  + rect.height/2) + 'px';
+          b.style.position = 'fixed';
+          b.style.margin = '0';
+
+          // Make the next motion slower/smoother
+          b.classList.add('center-move');
+
+          // Next frame: animate to center + resize
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              b.style.left = (centerX + offsets[i].dx) + 'px';
+              b.style.top  = (centerY + offsets[i].dy) + 'px';
+              b.style.width = finalSize + 'px';
+              b.style.height = finalSize + 'px';
+              b.style.fontSize = (finalSize * 0.6) + 'px';
+            });
+          });
+        });
+
+      }, 650); // pause after red outline
+    }, 650); // pause after only 4 remain
   }
 
   fingerBtn.addEventListener('pointerdown', startScanning);
